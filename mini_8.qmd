@@ -11,7 +11,7 @@ editor: Ruoxian Wu
 library(tidyverse)
 library(janitor)
 library(dplyr)
-library(palmerpenguins)
+library(arrow)
 library(knitr)
 ```
 
@@ -33,4 +33,141 @@ write_csv(airbnb_data, "airbnb_data.csv")
 
 airbnb_data
 ```
+```{r}
+airbnb_data_selected <-
+  airbnb_data |>
+  select(
+    host_id,
+    host_response_time,
+    host_is_superhost,
+    host_total_listings_count,
+    neighbourhood_cleansed,
+    bathrooms,
+    bedrooms,
+    price,
+    number_of_reviews,
+    review_scores_rating,
+    review_scores_accuracy,
+    review_scores_value
+  )
 
+write_parquet(
+  x = airbnb_data_selected, 
+  sink = 
+    "2024-03-3-paris-airbnblistings-select_variables.parquet"
+  )
+
+rm(airbnb_data)
+```
+
+```{r}
+
+airbnb_data_selected$price |>
+  head()
+
+airbnb_data_selected$price |>
+  str_split("") |>
+  unlist() |>
+  unique()
+
+airbnb_data_selected |>
+  select(price) |>
+  filter(str_detect(price, ","))
+
+airbnb_data_selected <-
+  airbnb_data_selected |>
+  mutate(
+    price = str_remove_all(price, "[\\$,]"),
+    price = as.integer(price)
+  )
+```
+
+
+
+```{r}
+airbnb_data_selected |>
+  ggplot(aes(x = price)) +
+  geom_histogram(binwidth = 10) +
+  theme_classic() +
+  labs(
+    x = "Price per night",
+    y = "Number of properties"
+  )
+
+airbnb_data_selected |>
+  filter(price > 1000) |>
+  ggplot(aes(x = price)) +
+  geom_histogram(binwidth = 10) +
+  theme_classic() +
+  labs(
+    x = "Price per night",
+    y = "Number of properties"
+  ) +
+  scale_y_log10()
+```
+
+
+```{r}
+airbnb_data_selected |>
+  filter(price < 1000) |>
+  ggplot(aes(x = price)) +
+  geom_histogram(binwidth = 10) +
+  theme_classic() +
+  labs(
+    x = "Price per night",
+    y = "Number of properties"
+  )
+
+airbnb_data_selected |>
+  filter(price > 90) |>
+  filter(price < 210) |>
+  ggplot(aes(x = price)) +
+  geom_histogram(binwidth = 1) +
+  theme_classic() +
+  labs(
+    x = "Price per night",
+    y = "Number of properties"
+  )
+```
+```{r}
+airbnb_data_less_1000 <-
+  airbnb_data_selected |>
+  filter(price < 1000)
+
+airbnb_data_less_1000 |>
+  filter(is.na(host_is_superhost))
+```
+
+```{r}
+airbnb_data_no_superhost_nas <-
+  airbnb_data_less_1000 |>
+  filter(!is.na(host_is_superhost)) |>
+  mutate(
+    host_is_superhost_binary =
+      as.numeric(host_is_superhost)
+  )
+```
+
+```{r}
+airbnb_data_no_superhost_nas |>
+  ggplot(aes(x = review_scores_rating)) +
+  geom_bar() +
+  theme_classic() +
+  labs(
+    x = "Review scores rating",
+    y = "Number of properties"
+  )
+
+```
+
+```{r}
+airbnb_data_no_superhost_nas |>
+  filter(is.na(review_scores_rating)) |>
+  nrow()
+
+airbnb_data_no_superhost_nas |>
+  filter(is.na(review_scores_rating)) |>
+  select(number_of_reviews) |>
+  table()
+airbnb_data_no_superhost_nas
+``
