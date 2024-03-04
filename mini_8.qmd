@@ -192,4 +192,18 @@ airbnb_data_no_superhost_nas |>
   select(number_of_reviews) |>
   table()
 airbnb_data_no_superhost_nas
-``
+```
+```{r}
+airbnb_data_no_superhost_nas |>
+  filter(!is.na(review_scores_rating)) |>
+  ggplot(aes(x = review_scores_rating)) +
+  geom_histogram(binwidth = 1) +
+  theme_classic() +
+  labs(
+    x = "Average review score",
+    y = "Number of properties"
+  )
+```
+
+
+
