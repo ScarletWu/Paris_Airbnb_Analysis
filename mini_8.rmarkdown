@@ -5,7 +5,9 @@ author: "Ruoxian Wu"
 date: "3 March 2024"
 bibliography: references.bib
 ---
+
 # Introduction
+
 ```{r}
 #| message: false
 #| echo: false
@@ -17,7 +19,9 @@ library(naniar)
 library(tidyverse)
 library(ggplot2)
 ```
+
 # Data Analysis
+
 ```{r}
 #| message: false
 #| echo: false
@@ -38,6 +42,7 @@ write_csv(airbnb_data, "airbnb_data.csv")
 
 airbnb_data
 ```
+
 ```{r}
 airbnb_data_selected <-
   airbnb_data |>
@@ -87,8 +92,6 @@ airbnb_data_selected <-
   )
 ```
 
-
-
 ```{r}
 #| label: fig-1
 #| fig-cap: Distribution of prices
@@ -125,7 +128,6 @@ airbnb_data_selected |>
   ) +
   scale_y_log10()
 ```
-
 
 ```{r}
 airbnb_data_selected |>
@@ -182,7 +184,6 @@ airbnb_data_no_superhost_nas |>
 
 ```
 
-```{r}
 airbnb_data_no_superhost_nas |>
   filter(is.na(review_scores_rating)) |>
   nrow()
