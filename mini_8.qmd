@@ -4,9 +4,18 @@ format: pdf
 author: "Ruoxian Wu"
 date: "3 March 2024"
 bibliography: references.bib
+abstract: "Exploratory data analysis (EDA) is used to predict factors that impact a host's likelihood of achieving superhost status. Based on the findings, we can gain insight into characteristics of superhost listings, significance of guest reviews, and pricing strategies."
 ---
 # Introduction
+The Parisian Airbnb market is highly popular among tourists from all over the world as a renowned tourist destination. The wide variety of Airbnb listings available in the city offer valuable insights into trends in urban hospitality, pricing dynamics, and the factors that impact guest satisfaction and host performance.
+
+This study uses data from Inside Airbnb as of 12 December 2023, and uses various data processing and analytical techniques to examine the relationship between listing characteristics, host attributes, and market outcomes. The report uses exploratory data analysis (EDA) to explore the distribution of prices across different neighborhoods, identify the traits of highly rated listings, and examine the correlation between superhost status and review scores. Advanced statistical methods, including logistic regression, are used to predict factors that significantly impact a host's likelihood of achieving superhost status. 
+
+The report aims to provide valuable recommendations for Airbnb hosts looking to optimize their listings for enhanced profitability and guest experience, while also offering guests a lens through which to make informed accommodation choices in Paris.
+
+
 ```{r}
+#| include: false
 #| message: false
 #| echo: false
 library(arrow)
@@ -18,9 +27,11 @@ library(tidyverse)
 library(ggplot2)
 ```
 # Data Analysis
+This study involves several stages of data processing. We start the process by acquiring the data, followed by a detailed cleaning and formatting step to ensure that the results are accurate and reliable, including removing non-numeric characters from prices and converting them to integers to make sure they are accurate. The study makes use of various R packages. Dplyr, ggplot2, and other tidyverse packages support a wide range of data manipulation, exploration, and visualization tasks for EDA. This EDA focuses on identifying patterns in pricing, the distribution of listings across neighborhoods, and the correlation between review scores and host attributes. The arrow package is utilized for reading and writing data in the Parquet format, enabling efficient data storage and access. The janitor package assists in data cleaning tasks, such as removing duplicate entries and tidying variable names. The knitr package is used for dynamic report generation, allowing for seamless integration of R code and its output into documents. The modelsummary package facilitates the creation of elegant tables summarizing statistical model results. The naniar package offers specialized functions for handling missing data, providing insights into the pattern of missingness. 
+
 ```{r}
+#| include: false
 #| message: false
-#| echo: false
 #get the dataset
 url <-
   paste0(
@@ -38,7 +49,10 @@ write_csv(airbnb_data, "airbnb_data.csv")
 
 airbnb_data
 ```
+
 ```{r}
+#| message: false
+#| include: false
 airbnb_data_selected <-
   airbnb_data |>
   select(
@@ -66,7 +80,8 @@ rm(airbnb_data)
 ```
 
 ```{r}
-
+#| message: false
+#| include: false
 airbnb_data_selected$price |>
   head()
 
@@ -91,11 +106,13 @@ airbnb_data_selected <-
 
 ```{r}
 #| label: fig-1
-#| fig-cap: Distribution of prices
+#| fig-cap: Distribution of Airbnb Prices in Paris
 #| echo: false
-#| warning: false
 #| message: false
-#| fig-subcap: ["Distribution of price"]
+#| warning: false
+#| layout-ncol: 2
+#| fig-subcap: ["Distribution of price", "Loged distribution of prices for prices more than $1,000"]
+
 
 airbnb_data_selected |>
   ggplot(aes(x = price)) +
@@ -105,15 +122,8 @@ airbnb_data_selected |>
     x = "Price per night",
     y = "Number of properties"
   )
-```
 
-```{r}
-#| label: fig-2
-#| fig-cap: Distribution of prices of Paris Airbnb 
-#| echo: false
-#| warning: false
-#| message: false
-#| fig-subcap: ["Distribution of Prices Using the Log Scale for Prices More Than $1,000"]
+
 airbnb_data_selected |>
   filter(price > 1000) |>
   ggplot(aes(x = price)) +
@@ -125,9 +135,11 @@ airbnb_data_selected |>
   ) +
   scale_y_log10()
 ```
-
+Figure 1 {fig-1} illustrates the distribution of nightly rental prices across Airbnb listings in Paris. The histogram highlights the concentration of listings within certain price ranges, providing insights into the affordability and pricing strategies of hosts in the city. The majority of listings appear to cluster around the lower to mid-price range, indicating a competitive market for budget-friendly accommodations.
 
 ```{r}
+#| message: false
+#| echo: false
 airbnb_data_selected |>
   filter(price < 1000) |>
   ggplot(aes(x = price)) +
@@ -151,6 +163,8 @@ airbnb_data_selected |>
 ```
 
 ```{r}
+#| message: false
+#| echo: false
 # remove all prices that are more than $999
 airbnb_data_less_1000 <-
   airbnb_data_selected |>
@@ -161,6 +175,9 @@ airbnb_data_less_1000 |>
 ```
 
 ```{r}
+#| message: false
+#| echo: false
+
 airbnb_data_no_superhost_nas <-
   airbnb_data_less_1000 |>
   filter(!is.na(host_is_superhost)) |>
@@ -171,6 +188,9 @@ airbnb_data_no_superhost_nas <-
 ```
 
 ```{r}
+#| message: false
+#| echo: false
+
 airbnb_data_no_superhost_nas |>
   ggplot(aes(x = review_scores_rating)) +
   geom_bar() +
@@ -183,6 +203,9 @@ airbnb_data_no_superhost_nas |>
 ```
 
 ```{r}
+#| message: false
+#| echo: false
+
 airbnb_data_no_superhost_nas |>
   filter(is.na(review_scores_rating)) |>
   nrow()
@@ -194,6 +217,9 @@ airbnb_data_no_superhost_nas |>
 airbnb_data_no_superhost_nas
 ```
 ```{r}
+#| message: false
+#| echo: false
+
 airbnb_data_no_superhost_nas |>
   filter(!is.na(review_scores_rating)) |>
   ggplot(aes(x = review_scores_rating)) +
@@ -205,5 +231,169 @@ airbnb_data_no_superhost_nas |>
   )
 ```
 
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_has_reviews <-
+  airbnb_data_no_superhost_nas |>
+  filter(!is.na(review_scores_rating))
+
+airbnb_data_has_reviews |>
+  count(host_response_time)
+```
+
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_has_reviews <-
+  airbnb_data_has_reviews |>
+  mutate(
+    host_response_time = if_else(
+      host_response_time == "N/A",
+      NA_character_,
+      host_response_time
+    ),
+    host_response_time = factor(host_response_time)
+  )
+```
+
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_has_reviews |>
+  filter(is.na(host_response_time)) |>
+  ggplot(aes(x = review_scores_rating)) +
+  geom_histogram(binwidth = 1) +
+  theme_classic() +
+  labs(
+    x = "Average review score",
+    y = "Number of properties"
+  )
+```
+
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_has_reviews |>
+  ggplot(aes(
+    x = host_response_time,
+    y = review_scores_accuracy
+  )) +
+  geom_miss_point() +
+  labs(
+    x = "Host response time",
+    y = "Review score accuracy",
+    color = "Is missing?"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_selected <-
+  airbnb_data_has_reviews |>
+  filter(!is.na(host_response_time))
+
+airbnb_data_selected |>
+  ggplot(aes(x = host_total_listings_count)) +
+  geom_histogram() +
+  scale_x_log10() +
+  labs(
+    x = "Total number of listings, by host",
+    y = "Number of hosts"
+  )
+
+```
+
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_selected |>
+  filter(host_total_listings_count >= 500) |>
+  head()
+
+airbnb_data_selected |>
+  filter(host_total_listings_count >= 500) |>
+  head()
+```
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_selected <-
+  airbnb_data_selected |>
+  add_count(host_id) |>
+  filter(n == 1) |>
+  select(-n)
 
 
+airbnb_data_selected |>
+  filter(number_of_reviews > 1) |>
+  ggplot(aes(x = price, y = review_scores_rating, 
+             color = host_is_superhost)) +
+  geom_point(size = 1, alpha = 0.1) +
+  theme_classic() +
+  labs(
+    x = "Price per night",
+    y = "Average review score",
+    color = "Superhost"
+  ) +
+  scale_color_brewer(palette = "Set1")
+```
+
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_selected |>
+  count(host_is_superhost) |>
+  mutate(
+    proportion = n / sum(n),
+    proportion = round(proportion, digits = 2)
+  )
+```
+
+```{r}
+#| message: false
+#| echo: false
+
+airbnb_data_selected |>
+  tabyl(host_response_time, host_is_superhost) |>
+  adorn_percentages("col") |>
+  adorn_pct_formatting(digits = 0) |>
+  adorn_ns() |>
+  adorn_title()
+```
+```{r}
+#| message: false
+#| echo: false
+
+logistic_reg_superhost_response_review <-
+  glm(
+    host_is_superhost ~
+      host_response_time +
+      review_scores_rating,
+    data = airbnb_data_selected,
+    family = binomial
+  )
+
+modelsummary(logistic_reg_superhost_response_review)
+```
+
+```{r}
+#| message: false
+#| echo: false
+
+write_parquet(
+  x = airbnb_data_selected, 
+  sink = "2023-12-12-london-airbnblistings-analysis_dataset.parquet"
+  )
+
+```
